@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap');
+
+        :root{
+            --color: #38647b;
+        }
+
+        * {
+            box-sizing: border-box;
+            padding: 0;
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            color: white;
+        }
+
+        .container{
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 300px;
+            margin: 10px;
+            margin-left: 0;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(4px);
+            border: rgba(255, 255, 255, 0.2) solid 1px;
+            border-bottom-color: rgb(150, 150, 150);
+            border-right-color: rgb(150, 150, 150);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .values{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+        }
+
+        .set{
+            width: 30%;
+            margin-left: 5px;
+            margin-right: 5px;
+            display: flex;
+        }
+
+        #srb input{
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 80px;
+            height: 30px;
+            border-radius: 5px;
+            margin-top: 5px;
+            padding-left: 5px;
+        }
+
+        #count{
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 55%;
+            height: 30px;
+            border-radius: 5px;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            padding-left: 5px;
+        }
+
+        #play{
+            background-color: var(--color);
+            border: none;
+            width: 45%;
+            height: 30px;
+            border-radius: 5px;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        #restart{
+            background-color: var(--color);
+            border: var(--color) solid 1px;
+            height: 30px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        #tails{
+            margin-left: 5px;
+        }
+
+        #scale{
+            width: 73%;
+            height: 15px;
+            -webkit-appearance: none;
+            background-color: rgba(0, 0, 0, 0.3);
+            outline: none;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        #scale::-webkit-slider-thumb{
+            -webkit-appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: rgb(255, 255, 255);
+            cursor: pointer;
+            box-shadow: -407px 0 0 400px var(--color);
+        }
+
+        .color{
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .color input{
+            width: 30px;
+            height: 32px;
+            background-color: transparent;
+            border: none;
+        }
+
+        input[type="checkbox"]{
+            position: relative;
+            width: 35px;
+            height: 20px;
+            -webkit-appearance: none;
+            background-color: rgba(0, 0, 0, 0.3);
+            border: none;
+            border-radius: 10px;
+            transition: 0.2s;
+        }
+
+        input[type="checkbox"]:checked{
+            background-color: var(--color);
+        }
+
+        input[type="checkbox"]::before{
+            content: " ";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 0;
+            left: 0;
+            background-color: white;
+            border-radius: 50%;
+            transition: 0.2s;
+        }
+
+        input[type="checkbox"]:checked::before{
+            left: 15px;
+        }
+
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="container">
+        <div class="values">
+            <h3>count</h3>
+            <div class="set">
+                <input required value="10" placeholder="amount" type="number" id="count">
+                <button id="play">set</button>
+            </div>
+            <h3>show</h3>
+            <input type="checkbox" id="tails" checked>
+        </div>
+        <div class="values" id="srb">
+            <input class="input_values" required value="10" placeholder="sigma" type="text" id="sigma">
+            <input class="input_values" required value="28" placeholder="rho" type="text" id="rho">
+            <input class="input_values" required value="2.6666666" placeholder="beta" type="text" id="beta">
+        </div>
+        <div class="values">
+            <h3>scale</h3>
+            <input value="9" min="0" max="20" step="0.01" type="range" id="scale">
+        </div>
+        <button id="restart">restart</button>
+    </div>
+    <script>
+        let sigma = 10;
+        let rho = 28;
+        let beta = 8/3;
+        //parameters
+        let time = 0.002;
+        let scale = 9;
+
+        let tails = true;
+
+        let color_list = [
+                        "#313b55",
+                        "#38647b",
+                        "#4fa6ae",
+                        "#6bd0b5",
+                        "#aceed1",
+                        "#f4fff7"];
+
+        /*color_list = [               
+                        "#c7212b",
+                        "#257181",
+                        "#c38165",
+                        "#859d93",
+                        "#ffab43",
+                        "#ffd1d1"];*/
+
+        //selection-----------------------------------------
+
+        document.querySelectorAll(".input_values").forEach( x =>{
+            x.addEventListener("keypress", () =>{
+            sigma =  Number(document.querySelector("#sigma").value);
+            rho = Number(document.querySelector("#rho").value);
+            beta = Number(document.querySelector("#beta").value);
+            });
+        })
+
+        document.querySelector("#scale").addEventListener("mousemove", () =>{
+            scale = document.querySelector("#scale").value;
+        });
+
+        document.querySelector("#tails").addEventListener("click", () =>{
+            tails = !tails;
+        });
+        
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.height = window.innerHeight;
+        canvas.width = window.innerWidth;
+        let centery = canvas.height / 2;
+        let centerx = canvas.width / 2;
+
+        canvas.style.setProperty("background-color","#1e1a2a" /*#170f1f*/); //here is the background color 
+
+        class ball {
+        constructor(x, y, z, size, color) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.size = size;
+            this.color = color;
+            this.list = [];
+            }
+
+            upball(){
+            this.list.push({x:this.x, y:this.y});
+            if (this.list.length > 70){
+                this.list.shift();
+            }
+            let dy = (this.x * (rho - this.z) - this.y) * time;
+            let dx = (sigma * (this.y - this.x)) * time;
+            let dz = (this.x * this.y - beta * this.z) * time;
+            this.x += dx
+            this.y += dy
+            this.z += dz
+            }
+
+            drawball() {
+                ctx.beginPath();
+                ctx.arc(this.x * scale + centerx, this.y * scale + centery, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+
+            drawLine(){
+                ctx.beginPath();
+                this.list.forEach(b => {
+                    ctx.lineTo(b.x * scale + centerx, b.y * scale + centery);
+                });
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = this.color;
+                ctx.stroke();
+            }
+
+            combine(){
+                this.drawball();
+                if (tails) {
+                    this.drawLine();
+                }
+                this.upball();
+            }
+        }
+
+
+        const array = [];
+
+        let count = 10;
+        document.querySelector("#play").addEventListener("click", ()=>{
+            count = document.querySelector("#count").value;
+            if (count > array.length){
+                create(count - array.length);
+            }else if (count < array.length){
+                const d = array.length - count;
+                for(let i = 0; i < d; i++){
+                    array.pop();
+                };
+            }else{
+                return
+            }; 
+        });
+
+        document.querySelector("#restart").addEventListener("click", ()=>{
+            const al = array.length;
+            for(let i = 0; i < al; i++){
+                array.pop();
+            };
+            create(count);
+        });
+
+        function create(a){
+            for(let i = 0; i < a; i++){
+            array.push(new ball(Math.random()*200-100, Math.random()*200-100, /*Math.random()*200-100*/0, 4, color_list[Math.floor(Math.random()*(color_list.length))]));
+            };
+        };
+        create(count);
+
+        function update() {
+            ctx.clearRect(0,0 ,canvas.width, canvas.height);
+            //while lopp
+            
+            array.forEach( x => {
+                x.combine();
+            });
+            //while lopp
+            requestAnimationFrame(update);
+        }
+
+        update();
+    </script>
+</body>
+</html>
